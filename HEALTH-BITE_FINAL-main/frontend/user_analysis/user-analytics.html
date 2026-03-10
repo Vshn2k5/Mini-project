@@ -1,0 +1,832 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="HealthBite — Nutrition Analytics Dashboard">
+    <title>HealthBite | Analytics</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --brand: #2563eb;
+            --brand-light: #eff6ff;
+            --green: #10b981;
+            --red: #ef4444;
+            --amber: #f59e0b;
+            --text: #0f172a;
+            --muted: #64748b;
+            --bg: #f0f2f5;
+            --card: #ffffff;
+            --border: #e2e8f0;
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            --t: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* ─── SIDEBAR ─── */
+        aside {
+            width: 260px;
+            background: var(--card);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            padding: 28px 18px;
+            flex-shrink: 0;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 36px;
+        }
+
+        .brand .logo {
+            width: 36px;
+            height: 36px;
+            background: var(--brand);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 16px;
+        }
+
+        .brand span {
+            font-size: 20px;
+            font-weight: 800;
+        }
+
+        .brand span em {
+            color: var(--brand);
+            font-style: normal;
+        }
+
+        nav {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .nl {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 11px 14px;
+            color: var(--muted);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 12px;
+            transition: var(--t);
+        }
+
+        .nl i {
+            width: 20px;
+            text-align: center;
+        }
+
+        .nl:hover {
+            background: #f8fafc;
+            color: var(--brand);
+        }
+
+        .nl.active {
+            background: var(--brand-light);
+            color: var(--brand);
+        }
+
+        .nl.danger {
+            color: var(--red);
+        }
+
+        .nl.danger:hover {
+            background: #fef2f2;
+        }
+
+        .side-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 16px 0;
+        }
+
+        /* ─── MAIN ─── */
+        main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .topbar {
+            padding: 20px 40px;
+            background: var(--card);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .topbar-left h2 {
+            font-size: 20px;
+            font-weight: 800;
+        }
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .date-chip {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--muted);
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .user-avatar {
+            width: 38px;
+            height: 38px;
+            background: linear-gradient(135deg, #dbeafe, #c7d2fe);
+            border-radius: 11px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 13px;
+            color: var(--brand);
+        }
+
+        /* ─── TAB BAR ─── */
+        .tab-bar {
+            display: flex;
+            gap: 4px;
+            padding: 20px 40px 0;
+            background: var(--card);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .tab-btn {
+            padding: 10px 28px;
+            background: transparent;
+            border: none;
+            font-family: 'Outfit', sans-serif;
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--muted);
+            border-radius: 10px 10px 0 0;
+            cursor: pointer;
+            transition: var(--t);
+            border-bottom: 3px solid transparent;
+        }
+
+        .tab-btn:hover {
+            color: var(--brand);
+            background: #f8fafc;
+        }
+
+        .tab-btn.active {
+            color: var(--brand);
+            border-bottom-color: var(--brand);
+            background: var(--brand-light);
+        }
+
+        /* ─── CONTENT SCROLL ─── */
+        .scroll {
+            flex: 1;
+            overflow-y: auto;
+            padding: 32px 40px;
+            display: flex;
+            flex-direction: column;
+            gap: 28px;
+        }
+
+        .scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .scroll::-webkit-scrollbar-thumb {
+            background: #e2e8f0;
+            border-radius: 10px;
+        }
+
+        /* ─── SUMMARY STAT CARDS ─── */
+        .stat-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+        }
+
+        .stat-card {
+            background: var(--card);
+            border-radius: 20px;
+            padding: 24px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            border-radius: 20px 20px 0 0;
+        }
+
+        .stat-card.cal::before {
+            background: var(--brand);
+        }
+
+        .stat-card.prot::before {
+            background: var(--green);
+        }
+
+        .stat-card.carb::before {
+            background: var(--amber);
+        }
+
+        .stat-card.fat::before {
+            background: var(--red);
+        }
+
+        .stat-label {
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--muted);
+            margin-bottom: 10px;
+        }
+
+        .stat-val {
+            font-size: 28px;
+            font-weight: 800;
+        }
+
+        .stat-val span {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--muted);
+        }
+
+        .stat-sub {
+            font-size: 12px;
+            color: var(--muted);
+            font-weight: 600;
+            margin-top: 6px;
+        }
+
+        .stat-bar-bg {
+            height: 5px;
+            background: #f1f5f9;
+            border-radius: 10px;
+            margin-top: 12px;
+        }
+
+        .stat-bar {
+            height: 5px;
+            border-radius: 10px;
+            transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* ─── TWO COLUMN GRID ─── */
+        .two-col {
+            display: grid;
+            grid-template-columns: 1.5fr 1fr;
+            gap: 24px;
+        }
+
+        .card {
+            background: var(--card);
+            border-radius: 24px;
+            padding: 28px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+        }
+
+        .card-title {
+            font-size: 13px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--muted);
+            margin-bottom: 6px;
+        }
+
+        .card-big-val {
+            font-size: 32px;
+            font-weight: 800;
+            margin-bottom: 4px;
+        }
+
+        .card-trend {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 8px;
+        }
+
+        .card-trend.up {
+            background: #ecfdf5;
+            color: var(--green);
+        }
+
+        .card-trend.down {
+            background: #fef2f2;
+            color: var(--red);
+        }
+
+        .chart-wrap {
+            height: 260px;
+            margin-top: 24px;
+            position: relative;
+        }
+
+        /* ─── INSIGHT LISTS ─── */
+        .insight-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .insight-item {
+            padding: 14px;
+            border-radius: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f8fafc;
+        }
+
+        .insight-item.good {
+            background: #f0fdf4;
+            border: 1px solid #dcfce7;
+        }
+
+        .insight-item.bad {
+            background: #fff1f2;
+            border: 1px solid #fecdd3;
+        }
+
+        .insight-name {
+            font-size: 13px;
+            font-weight: 800;
+        }
+
+        .insight-desc {
+            font-size: 11px;
+            color: var(--muted);
+            font-weight: 500;
+            margin-top: 2px;
+        }
+
+        .insight-badge {
+            font-size: 9px;
+            font-weight: 800;
+            text-transform: uppercase;
+            padding: 3px 9px;
+            border-radius: 100px;
+            white-space: nowrap;
+        }
+
+        .badge-good {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .badge-bad {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .badge-warn {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        /* loading skeleton */
+        .skeleton {
+            background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+            background-size: 200%;
+            animation: shimmer 1.4s infinite;
+            border-radius: 8px;
+        }
+
+        @keyframes shimmer {
+            0% {
+                background-position: 200%
+            }
+
+            100% {
+                background-position: -200%
+            }
+        }
+
+        /* Responsive */
+        @media(max-width:1100px) {
+            .two-col {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media(max-width:900px) {
+            .stat-row {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media(max-width:768px) {
+            aside {
+                display: none;
+            }
+
+            .scroll,
+            .topbar,
+            .tab-bar {
+                padding-left: 20px;
+                padding-right: 20px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <aside>
+        <div class="brand">
+            <div class="logo"><i class="fas fa-utensils"></i></div>
+            <span>Health<em>Bite</em></span>
+        </div>
+        <nav>
+            <a href="../user.html"        class="nl"><i class="fas fa-home"></i> Dashboard</a>
+            <a href="../full-menu.html"   class="nl"><i class="fas fa-th-large"></i> Full Menu</a>
+            <a href="user-analytics.html" class="nl" id="nav-analytics"><i class="fas fa-chart-bar"></i> Analytics</a>
+            <a href="ai-insights.html"    class="nl" id="nav-insights"><i class="fas fa-brain"></i> AI Insights</a>
+            <a href="../orders.html"      class="nl"><i class="fas fa-clipboard-list"></i> Orders</a>
+            <a href="../cart.html"        class="nl"><i class="fas fa-shopping-cart"></i> Cart</a>
+            <a href="../health.html"      class="nl"><i class="fas fa-user-circle"></i> Health Profile</a>
+        </nav>
+        <hr class="side-divider">
+        <a href="#" onclick="logout()" class="nl danger"><i class="fas fa-sign-out-alt"></i> Logout</a>
+    </aside>
+
+    <main>
+        <div class="topbar">
+            <div class="topbar-left">
+                <h2>Nutrition Analytics</h2>
+            </div>
+            <div class="topbar-right">
+                <div class="date-chip"><i class="far fa-calendar"></i><span id="hdr-date"></span></div>
+                <div class="user-avatar" id="hdr-avatar">U</div>
+            </div>
+        </div>
+
+        <div class="tab-bar">
+            <button class="tab-btn active" data-period="daily">Today</button>
+            <button class="tab-btn" data-period="weekly">Last 7 Days</button>
+            <button class="tab-btn" data-period="monthly">Last 30 Days</button>
+        </div>
+
+        <div class="scroll" id="page-content">
+            <!-- ── STAT CARDS ── -->
+            <div class="stat-row">
+                <div class="stat-card cal">
+                    <div class="stat-label">Calories</div>
+                    <div class="stat-val" id="s-cal">-- <span>kcal</span></div>
+                    <div class="stat-sub">Limit: <span id="s-cal-limit">2000</span> kcal</div>
+                    <div class="stat-bar-bg">
+                        <div class="stat-bar" id="b-cal" style="background:#2563eb;width:0%"></div>
+                    </div>
+                </div>
+                <div class="stat-card prot">
+                    <div class="stat-label">Protein</div>
+                    <div class="stat-val" id="s-prot">-- <span>g</span></div>
+                    <div class="stat-sub">Limit: <span id="s-prot-limit">60</span>g</div>
+                    <div class="stat-bar-bg">
+                        <div class="stat-bar" id="b-prot" style="background:#10b981;width:0%"></div>
+                    </div>
+                </div>
+                <div class="stat-card carb">
+                    <div class="stat-label">Carbohydrates</div>
+                    <div class="stat-val" id="s-carb">-- <span>g</span></div>
+                    <div class="stat-sub">Limit: <span id="s-carb-limit">250</span>g</div>
+                    <div class="stat-bar-bg">
+                        <div class="stat-bar" id="b-carb" style="background:#f59e0b;width:0%"></div>
+                    </div>
+                </div>
+                <div class="stat-card fat">
+                    <div class="stat-label">Fat</div>
+                    <div class="stat-val" id="s-fat">-- <span>g</span></div>
+                    <div class="stat-sub">Limit: <span id="s-fat-limit">70</span>g</div>
+                    <div class="stat-bar-bg">
+                        <div class="stat-bar" id="b-fat" style="background:#ef4444;width:0%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── CHARTS ROW ── -->
+            <div class="two-col">
+                <div class="card">
+                    <div class="card-title" id="trend-label">Weekly Nutrition Trend</div>
+                    <div class="chart-wrap"><canvas id="trendChart"></canvas></div>
+                </div>
+                <div class="card">
+                    <div class="card-title">Order Quality</div>
+                    <div class="chart-wrap"><canvas id="qualityChart"></canvas></div>
+                </div>
+            </div>
+
+            <!-- ── INSIGHT PANELS ── -->
+            <div class="two-col">
+                <div class="card">
+                    <div class="card-title" style="margin-bottom:16px;">
+                        <i class="fas fa-check-circle" style="color:#10b981;margin-right:6px;"></i>Top Healthy Choices
+                    </div>
+                    <div class="insight-list" id="good-list">
+                        <div style="color:var(--muted);font-size:13px;">Loading...</div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-title" style="margin-bottom:16px;">
+                        <i class="fas fa-exclamation-triangle" style="color:#ef4444;margin-right:6px;"></i>Items to
+                        Monitor
+                    </div>
+                    <div class="insight-list" id="bad-list">
+                        <div style="color:var(--muted);font-size:13px;">Loading...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="../script.js"></script>
+    <script>
+        const API = window.API_ROOT
+            ? window.API_ROOT.replace(/\/api$/, '')   // strip trailing /api added by script.js
+            : window.location.origin;
+        let trendChart = null, qualityChart = null;
+        let currentPeriod = 'daily';
+
+        // logout() provided by script.js
+
+        // ── Init ──────────────────────────────────────────────────────────────
+        document.addEventListener('DOMContentLoaded', async () => {
+            const token = localStorage.getItem('token');
+            if (!token) { window.location.href = '/index.html'; return; }
+
+            const now = new Date();
+            document.getElementById('hdr-date').textContent =
+                now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+            const name = localStorage.getItem('hb_user_name') || 'U';
+            document.getElementById('hdr-avatar').textContent = name.charAt(0).toUpperCase();
+
+            // Tab switcher
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentPeriod = btn.dataset.period;
+                    loadData(currentPeriod);
+                });
+            });
+
+            await loadData('daily');
+        });
+
+        // ── Load data for period ──────────────────────────────────────────────
+        async function loadData(period) {
+            const token = localStorage.getItem('token');
+            const days = period === 'daily' ? 1 : (period === 'weekly' ? 7 : 30);
+            document.getElementById('trend-label').textContent =
+                period === 'daily' ? "Today's Nutrition" : (period === 'weekly' ? 'Last 7 Days Trend' : 'Last 30 Days Trend');
+
+            try {
+                // Nutrition data
+                const [nutRes, perfRes] = await Promise.all([
+                    fetch(`${API}/api/analytics/nutrition?days=${days}`, { headers: { Authorization: `Bearer ${token}` } }),
+                    fetch(`${API}/api/analytics/performance?period=${period === 'daily' ? 'Daily' : (period === 'weekly' ? 'Weekly' : 'Monthly')}`,
+                        { headers: { Authorization: `Bearer ${token}` } }),
+                ]);
+
+                if (nutRes.ok) {
+                    const nut = await nutRes.json();
+                    renderStats(nut, period);
+                    renderTrendChart(nut, period);
+                }
+
+                if (perfRes.ok) {
+                    const perf = await perfRes.json();
+                    renderQualityChart(perf);
+                    renderInsightLists(perf);
+                }
+            } catch (e) {
+                console.error('Analytics fetch error:', e);
+            }
+        }
+
+        // ── Stats cards ───────────────────────────────────────────────────────
+        function renderStats(nut, period) {
+            const L = nut.limits || {};
+            const days = period === 'daily' ? 1 : (period === 'weekly' ? 7 : 30);
+
+            // Sum up daily_data
+            let cals = 0, prot = 0, carbs = 0, fat = 0;
+            (nut.daily_data || []).forEach(d => {
+                cals += d.calories || 0;
+                prot += d.protein || 0;
+                carbs += d.carbs || 0;
+                fat += d.fat || 0;
+            });
+
+            const calLim = (L.calories || 2000) * days;
+            const protLim = (L.protein || 60) * days;
+            const carbLim = (L.carbs || 250) * days;
+            const fatLim = (L.fat || 70) * days;
+
+            setStatCard('cal', Math.round(cals), calLim, 'kcal');
+            setStatCard('prot', Math.round(prot), protLim, 'g');
+            setStatCard('carb', Math.round(carbs), carbLim, 'g');
+            setStatCard('fat', Math.round(fat), fatLim, 'g');
+
+            document.getElementById('s-cal-limit').textContent = calLim.toLocaleString();
+            document.getElementById('s-prot-limit').textContent = protLim;
+            document.getElementById('s-carb-limit').textContent = carbLim;
+            document.getElementById('s-fat-limit').textContent = fatLim;
+        }
+
+        function setStatCard(id, consumed, limit, unit) {
+            document.getElementById(`s-${id}`).innerHTML = `${consumed.toLocaleString()} <span>${unit}</span>`;
+            const pct = limit > 0 ? Math.min(100, Math.round(consumed / limit * 100)) : 0;
+            document.getElementById(`b-${id}`).style.width = pct + '%';
+        }
+
+        // ── Trend Chart (Line) ────────────────────────────────────────────────
+        function renderTrendChart(nut, period) {
+            const ctx = document.getElementById('trendChart').getContext('2d');
+            if (trendChart) trendChart.destroy();
+
+            const days = nut.daily_data || [];
+            const labels = days.map((d, i) => {
+                if (period === 'daily') return 'Today';
+                const dt = new Date(); dt.setDate(dt.getDate() - (days.length - 1 - i));
+                return period === 'weekly'
+                    ? dt.toLocaleDateString('en-US', { weekday: 'short' })
+                    : dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            });
+            const calData = days.map(d => Math.round(d.calories || 0));
+            const sugarData = days.map(d => Math.round(d.sugar || 0));
+            const gradBlue = ctx.createLinearGradient(0, 0, 0, 260);
+            gradBlue.addColorStop(0, 'rgba(37,99,235,0.25)');
+            gradBlue.addColorStop(1, 'rgba(37,99,235,0)');
+
+            trendChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [
+                        {
+                            label: 'Calories',
+                            data: calData,
+                            borderColor: '#2563eb', borderWidth: 3,
+                            backgroundColor: gradBlue, fill: true,
+                            pointBackgroundColor: '#fff', pointBorderColor: '#2563eb', pointBorderWidth: 2, pointRadius: 5,
+                            tension: 0.4, yAxisID: 'y'
+                        },
+                        {
+                            label: 'Sugar (g)',
+                            data: sugarData,
+                            borderColor: '#f59e0b', borderWidth: 2, borderDash: [6, 3],
+                            backgroundColor: 'transparent', fill: false,
+                            pointBackgroundColor: '#fff', pointBorderColor: '#f59e0b', pointBorderWidth: 2, pointRadius: 4,
+                            tension: 0.4, yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    scales: {
+                        x: { grid: { display: false }, ticks: { font: { weight: '700', size: 11 }, color: '#94a3b8' }, border: { display: false } },
+                        y: { display: false },
+                        y1: { display: false }
+                    },
+                    plugins: {
+                        legend: { display: true, position: 'top', labels: { font: { family: 'Outfit', size: 12, weight: '700' }, boxWidth: 12, usePointStyle: true } },
+                        tooltip: { backgroundColor: '#1e293b', titleFont: { family: 'Outfit', size: 12 }, bodyFont: { family: 'Outfit', size: 13, weight: 'bold' }, cornerRadius: 10, displayColors: true }
+                    }
+                }
+            });
+        }
+
+        // ── Quality Chart (Donut) ──────────────────────────────────────────────
+        function renderQualityChart(perf) {
+            const ctx = document.getElementById('qualityChart').getContext('2d');
+            if (qualityChart) qualityChart.destroy();
+
+            const chartData = perf.chart || {};
+            const healthyArr   = chartData.healthy   || [];
+            const unhealthyArr = chartData.unhealthy || [];
+            
+            const totalHealthy   = healthyArr.reduce((a, b) => a + b, 0);
+            const totalUnhealthy = unhealthyArr.reduce((a, b) => a + b, 0);
+            const total = totalHealthy + totalUnhealthy;
+
+            if (total === 0) {
+                ctx.font = '14px Outfit, sans-serif';
+                ctx.fillStyle = '#94a3b8';
+                ctx.textAlign = 'center';
+                ctx.fillText('No data available for this period', ctx.canvas.width / 2, ctx.canvas.height / 2);
+                return;
+            }
+
+            qualityChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Healthy', 'High Risk'],
+                    datasets: [{
+                        data: [totalHealthy, totalUnhealthy],
+                        backgroundColor: ['#10b981', '#ef4444'],
+                        borderWidth: 0, hoverOffset: 6,
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    cutout: '72%',
+                    plugins: {
+                        legend: { position: 'bottom', labels: { font: { family: 'Outfit', size: 12, weight: '700' }, padding: 16, usePointStyle: true } },
+                        tooltip: { backgroundColor: '#1e293b', titleFont: { family: 'Outfit', size: 12 }, bodyFont: { family: 'Outfit', size: 13, weight: 'bold' }, cornerRadius: 10 }
+                    }
+                }
+            });
+        }
+
+        // ── Insight Lists ──────────────────────────────────────────────────────
+        function renderInsightLists(perf) {
+            const goodList = document.getElementById('good-list');
+            const badList = document.getElementById('bad-list');
+
+            const topHealthy = perf.top_performers || [];
+            const topRisky = perf.focus_areas || [];
+
+            if (topHealthy.length > 0) {
+                goodList.innerHTML = topHealthy.slice(0, 5).map(f => `
+                    <div class="insight-item good">
+                        <div>
+                            <div class="insight-name">${f.name || 'Healthy Item'}</div>
+                            <div class="insight-desc">${f.subtitle || 'Good nutritional profile'}</div>
+                        </div>
+                        <span class="insight-badge badge-good">${f.xp || 'Safe'}</span>
+                    </div>`).join('');
+            } else {
+                goodList.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:8px 0;">No orders in this period yet.</div>';
+            }
+
+            if (topRisky.length > 0) {
+                badList.innerHTML = topRisky.slice(0, 5).map(f => {
+                    const badgeClass = f.badge === 'Limit' ? 'badge-bad' : 'badge-warn';
+                    return `
+                    <div class="insight-item bad">
+                        <div>
+                            <div class="insight-name">${f.name || 'Item'}</div>
+                            <div class="insight-desc">${f.subtitle || 'Monitor intake'}</div>
+                        </div>
+                        <span class="insight-badge ${badgeClass}">${f.badge || 'Watch'}</span>
+                    </div>`;
+                }).join('');
+            } else {
+                badList.innerHTML = '<div style="color:#10b981;font-size:13px;font-weight:600;padding:8px 0;">No risky items detected. Great choices!</div>';
+            }
+        }
+    </script>
+</body>
+
+</html>

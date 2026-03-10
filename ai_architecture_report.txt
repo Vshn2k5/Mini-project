@@ -1,0 +1,268 @@
+# HealthBite AI — Complete Architecture Report
+
+## 1. Executive Summary
+
+HealthBite uses a **multi-layered AI architecture** consisting of three tightly integrated subsystems:
+
+| Layer | Technology | Purpose |
+|---|---|---|
+| **Layer 1** — Intent Detection | Keyword-based NLP | Classifies user messages into actionable intents |
+| **Layer 2** — Hybrid Health Scoring Engine | Clinical Rules + RandomForest ML | Calculates a 0–100 safety score for every food item |
+| **Layer 3** — Unified RAG LLM | Groq API (LLaMA 3.1 8B) | Generates human-readable explanations grounded in database facts |
+
+Every single user query — whether it's "hi", "is pizza safe?", or "recommend lunch" — flows through all three layers before a response is generated. **No response is ever generated without database context.**
+
+---
+
+## 2. System Architecture Flow
+
+```mermaid
+flowchart TD
+    A["User Message"] --> B["Intent Detection"]
+    B --> C{"Food Mentioned?"}
+    C -- Yes --> D["Retrieve Food from Menu DB"]
+    D --> E["Hybrid Health Score Engine"]
+    E --> F["Build RAG Context String"]
+    C -- No --> G{"Intent Type?"}
+    G -- "recommendation" --> H["Score ALL Menu Items"]
+    H --> I["Select Top 3 Safest Foods"]
+    I --> F
+    G -- "greeting / general" --> J["Inject Menu Summary"]
+    J --> F
+    F --> K["Unified RAG LLM Call (Groq)"]
+    K --> L["Final JSON Response to Frontend"]
+```
+
+---
+
+## 3. Layer 1 — Intent Detection Engine
+
+**File:** [chatbot_engine.py](file:///h:/HEALTH-BITE_FINAL-!!!!!!!!!!!/HEALTH-BITE_FINAL-main/backend/chatbot_engine.py#L34-L42)
+
+The intent detector is a **keyword-matching NLP classifier** that categorizes every user message into one of 7 intents:
+
+| Intent | Trigger Keywords | Confidence |
+|---|---|---|
+| `greeting` | hello, hi, hey | 1.0 |
+| [recommendation](file:///h:/HEALTH-BITE_FINAL-%21%21%21%21%21%21%21%21%21%21%21/HEALTH-BITE_FINAL-main/backend/chatbot_engine.py#221-255) | suggest, recommend, hungry, what to eat | 0.9 |
+| `nutrition_query` | sugar, sodium, calorie, nutrition | 0.8 |
+| `disease_advice` | diabetes, pressure, hypertension, heart | 0.8 |
+| [order_status](file:///h:/HEALTH-BITE_FINAL-%21%21%21%21%21%21%21%21%21%21%21/HEALTH-BITE_FINAL-main/backend/routes/admin_orders.py#81-116) | order, status, track | 0.9 |
+| [analytics](file:///h:/HEALTH-BITE_FINAL-%21%21%21%21%21%21%21%21%21%21%21/HEALTH-BITE_FINAL-main/backend/analytics.py#352-425) | stats, analytics, report | 0.9 |
+| `general_chat` | *(fallback — no match)* | 0.5 |
+
+This is intentionally lightweight. The LLM handles nuance; the intent engine only decides *what database context to retrieve*.
+
+---
+
+## 4. Layer 2 — Hybrid Health Scoring Engine
+
+**File:** [chatbot_engine.py](file:///h:/HEALTH-BITE_FINAL-!!!!!!!!!!!/HEALTH-BITE_FINAL-main/backend/chatbot_engine.py#L47-L219)
+
+This is the core intelligence of HealthBite. It produces a **0–100 health safety score** for any food item relative to a specific user's medical profile. It combines two independent scoring systems:
+
+### 4a. Clinical Rule Engine (Step 1)
+
+Starts at a perfect score of **100** and applies **medical penalty deductions** based on the user's diagnosed conditions:
+
+| Condition | Nutrient Checked | Threshold | Penalty |
+|---|---|---|---|
+| **Diabetes** | Sugar | > 15g | −40 × severity |
+| **Diabetes** | Sugar | > 8g | −20 × severity |
+| **Hypertension** | Sodium | > 1000mg | −35 × severity |
+| **Hypertension** | Sodium | > 600mg | −15 × severity |
+| **Obesity** | Calories | > 700 kcal | −30 × severity |
+| **Obesity** | Calories | > 500 kcal | −15 × severity |
+| **Heart Disease** | Fat | > 25g | −30 × severity |
+| **Heart Disease** | Sodium | > 800mg | −20 × severity |
+| **Anemia** | Protein | < 5g | −10 |
+| **Dietary Violation** | Veg/Non-Veg mismatch | — | −80 |
+| **Allergy Match** | Allergen flag in DB | — | −80 |
+
+#### Severity Multiplier
+
+Each condition's penalty is scaled by the user's **severity level**:
+
+| Severity | Multiplier |
+|---|---|
+| Severe | 1.5× |
+| Moderate | 1.0× |
+| Mild | 0.5× |
+
+*Example:* A user with **Severe Diabetes** eating a food with 20g sugar gets a penalty of `40 × 1.5 = 60 points` deducted.
+
+### 4b. ML Recommendation Model (Step 2)
+
+**File:** [train_model.py](file:///h:/HEALTH-BITE_FINAL-!!!!!!!!!!!/HEALTH-BITE_FINAL-main/backend/ai_engine/train_model.py)
+
+A **RandomForestClassifier** (100 estimators) trained on a curated dataset of user profiles and food recommendations.
+
+**Training Features (11 dimensions):**
+
+| Feature | Type |
+|---|---|
+| Age | Numeric |
+| BMI | Numeric |
+| Gender | Categorical (encoded) |
+| Activity Level | Categorical (encoded) |
+| Diet Type | Categorical (encoded) |
+| Goal | Categorical (encoded) |
+| Health Condition | Categorical (encoded) |
+| Target Calories | Numeric |
+| Required Protein | Numeric |
+| Carb Limit | Numeric |
+| Fat Limit | Numeric |
+
+**Output:** Probability distribution across **125 food items**. The model outputs `predict_proba()` for every food in the menu, and the relative probability (compared to the top-ranked food) is converted to a 0–100 ML score.
+
+**Model Selection:** The training pipeline benchmarks both **RandomForest** and **GaussianNB**, and automatically saves whichever achieves higher accuracy.
+
+**Serialization:** Models are saved as [.pkl](file:///h:/HEALTH-BITE_FINAL-%21%21%21%21%21%21%21%21%21%21%21/HEALTH-BITE_FINAL-main/backend/models/food_scaler.pkl) files via `joblib`:
+- [food_recommender.pkl](file:///h:/HEALTH-BITE_FINAL-%21%21%21%21%21%21%21%21%21%21%21/HEALTH-BITE_FINAL-main/backend/models/food_recommender.pkl) — The trained classifier
+- [label_encoders.pkl](file:///h:/HEALTH-BITE_FINAL-%21%21%21%21%21%21%21%21%21%21%21/HEALTH-BITE_FINAL-main/backend/ai_engine/label_encoders.pkl) — Sklearn LabelEncoders for categorical features
+
+### 4c. Hybrid Blend Formula (Step 3)
+
+The final score merges clinical safety with ML personalization:
+
+```
+final_score = (rule_score × 0.7) + (ml_score × 0.3 × rule_score / 100)
+```
+
+| Component | Weight | Purpose |
+|---|---|---|
+| Clinical Rules | 70% (anchor) | Safety is the foundation |
+| ML Prediction | 30% (boost) | Personal preference adjustment |
+
+**Key insight:** The ML boost is *gated* by the rule score. If a food is clinically dangerous (rule_score = 20), the ML can only contribute `0.3 × 20/100 = 6 points max`. This ensures **safety always overrides preference**.
+
+---
+
+## 5. Layer 3 — Unified RAG LLM Engine
+
+**File:** [chatbot_engine.py](file:///h:/HEALTH-BITE_FINAL-!!!!!!!!!!!/HEALTH-BITE_FINAL-main/backend/chatbot_engine.py#L256-L291)
+
+### What is RAG?
+
+**Retrieval-Augmented Generation** means the LLM never answers from its own training data. Instead, it receives a **pre-built context string** containing real data from the HealthBite database, and is instructed to only use that data in its response.
+
+### LLM Provider
+
+| Parameter | Value |
+|---|---|
+| Provider | Groq Cloud |
+| Model | `llama-3.1-8b-instant` |
+| Architecture | LLaMA 3.1 (Meta AI), 8 billion parameters |
+| Latency | ~200-500ms (Groq's custom LPU hardware) |
+| SDK | `groq` Python package |
+
+### The Unified Prompt Template
+
+```text
+You are a helpful nutrition assistant for a smart canteen.
+
+User message: "{message}"
+
+User health profile:
+Diseases: {diseases}
+Diet preference: {dietary_preference}
+
+Retrieved Database Context:
+{rag_context}
+
+Instructions:
+1. Answer the user's message concisely in a conversational, supportive tone.
+2. If the user asks about a specific food or recommendation, use the Retrieved Database Context to explain.
+3. If information is missing from the database context, safely state that.
+4. Do NOT invent medical facts or nutritional values.
+```
+
+### Context Building Logic
+
+The `{rag_context}` is dynamically constructed based on the detected intent:
+
+| Scenario | Context Injected |
+|---|---|
+| **Food Inquiry** (e.g., "Is pizza safe?") | Food name, calories, sugar, protein + calculated health score + clinical penalties |
+| **Recommendation** (e.g., "What should I eat?") | Top 3 safest foods from menu DB with scores, calories, and protein |
+| **General Chat / Greeting** (e.g., "hi", "what is diabetes?") | Summary of up to 15 menu item names + user profile context |
+
+This ensures that **every response is grounded in real database data**, regardless of the query type.
+
+---
+
+## 6. Supporting AI Modules
+
+### 6a. Health Scoring Module
+
+**File:** [health_scoring.py](file:///h:/HEALTH-BITE_FINAL-!!!!!!!!!!!/HEALTH-BITE_FINAL-main/backend/ai_engine/health_scoring.py)
+
+Standalone scoring engine used by the menu recommendation system (separate from the chatbot). Uses medical thresholds:
+- Diabetes: Sugar ≤ 8g (safe), 8–20g (moderate), > 20g (risk)
+- Hypertension: Sodium ≤ 400mg (safe), 400–800mg (moderate), > 800mg (risk)  
+- Allergy: Binary flag matching (nuts, milk, seafood, gluten, soy)
+
+### 6b. Risk Prediction Engine
+
+**File:** [risk_prediction.py](file:///h:/HEALTH-BITE_FINAL-!!!!!!!!!!!/HEALTH-BITE_FINAL-main/backend/ai_engine/risk_prediction.py)
+
+Advanced analytics module that provides:
+- **Dietary Advice Generator** — Deterministic advice strings based on nutrition data and health conditions
+- **Consumption Pattern Analyzer** — Projects future health risks based on eating patterns over the previous week
+
+---
+
+## 7. Technology Stack
+
+| Component | Technology |
+|---|---|
+| Backend Framework | FastAPI + Uvicorn |
+| Database ORM | SQLAlchemy |
+| ML Framework | scikit-learn (RandomForest, GaussianNB) |
+| Model Serialization | joblib |
+| Numerical Computing | NumPy, Pandas |
+| LLM Provider | Groq Cloud API |
+| LLM Model | LLaMA 3.1 8B Instant |
+| Authentication | python-jose (JWT) + passlib (bcrypt) |
+
+---
+
+## 8. Anti-Hallucination Safeguards
+
+| Safeguard | How It Works |
+|---|---|
+| **Database-only context** | The LLM prompt only contains data retrieved from the local menu DB |
+| **Explicit instruction** | Prompt says "Do NOT invent medical facts or nutritional values" |
+| **Missing data handling** | Prompt says "If information is missing, safely state that" |
+| **Clinical rule gate** | ML scores are mathematically gated by clinical safety scores |
+| **Severity scaling** | Penalties are amplified for severe conditions |
+| **Allergen hard-block** | −80 point penalty makes allergen-containing foods virtually unrecommendable |
+
+---
+
+## 9. Data Flow Example
+
+**User says:** *"Is Chocolate Brownie safe for me?"*
+**User profile:** Diabetes (Moderate), Veg diet
+
+**Step 1 — Intent Detection:** `general_chat` (0.5 confidence)
+
+**Step 2 — Food Extraction:** "chocolate brownie" matched in menu DB → `{name: "Chocolate Brownie", sugar: 45, calories: 450, ...}`
+
+**Step 3 — Health Score Calculation:**
+- Rule score starts at 100
+- Sugar = 45g > 15g → penalty: −40 × 1.0 = −40
+- Final rule score: 60
+- ML relative probability: ~0.3 → ML score: 30
+- **Hybrid score: (60 × 0.7) + (30 × 0.3 × 60/100) = 42 + 5.4 = 47.4**
+
+**Step 4 — RAG Context Built:**
+```
+User inquired about food: Chocolate Brownie
+Calories: 450, Sugar: 45, Protein: 5
+Calculated Health Score: 47.4/100
+Penalties: Very high sugar for diabetes
+```
+
+**Step 5 — LLM Response:** *(grounded in the above context)*
+> "The Chocolate Brownie has a health score of 47.4/100 for your profile. With 45g of sugar, it's flagged as a high-risk option for diabetes management. I'd recommend choosing a lower-sugar alternative instead."

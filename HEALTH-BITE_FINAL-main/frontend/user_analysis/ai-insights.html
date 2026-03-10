@@ -1,0 +1,1003 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="HealthBite — AI Risk Prediction & Health Insights">
+    <title>HealthBite | AI Insights</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --brand: #2563eb;
+            --brand-light: #eff6ff;
+            --brand-dark: #1e40af;
+            --green: #10b981;
+            --green-light: #ecfdf5;
+            --green-dark: #065f46;
+            --amber: #f59e0b;
+            --amber-light: #fffbeb;
+            --red: #ef4444;
+            --red-light: #fef2f2;
+            --red-dark: #991b1b;
+            --purple: #8b5cf6;
+            --purple-light: #f5f3ff;
+            --text: #0f172a;
+            --muted: #64748b;
+            --bg: #f0f2f5;
+            --card: #ffffff;
+            --border: #e2e8f0;
+            --shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+            --t: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* ─── SIDEBAR ─── */
+        aside {
+            width: 260px;
+            background: var(--card);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            padding: 28px 18px;
+            flex-shrink: 0;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 36px;
+        }
+
+        .brand .logo {
+            width: 36px;
+            height: 36px;
+            background: var(--brand);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 16px;
+        }
+
+        .brand span {
+            font-size: 20px;
+            font-weight: 800;
+        }
+
+        .brand span em {
+            color: var(--brand);
+            font-style: normal;
+        }
+
+        nav {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .nl {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 11px 14px;
+            color: var(--muted);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 12px;
+            transition: var(--t);
+        }
+
+        .nl i {
+            width: 20px;
+            text-align: center;
+        }
+
+        .nl:hover {
+            background: #f8fafc;
+            color: var(--brand);
+        }
+
+        .nl.active {
+            background: var(--brand-light);
+            color: var(--brand);
+        }
+
+        .nl.danger {
+            color: var(--red);
+        }
+
+        .nl.danger:hover {
+            background: #fef2f2;
+        }
+
+        .side-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 16px 0;
+        }
+
+        /* ─── MAIN ─── */
+        main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .topbar {
+            padding: 20px 40px;
+            background: var(--card);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .topbar h2 {
+            font-size: 20px;
+            font-weight: 800;
+        }
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .date-chip {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--muted);
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .user-avatar {
+            width: 38px;
+            height: 38px;
+            background: linear-gradient(135deg, #dbeafe, #c7d2fe);
+            border-radius: 11px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 13px;
+            color: var(--brand);
+        }
+
+        /* ─── SCROLL AREA ─── */
+        .scroll {
+            flex: 1;
+            overflow-y: auto;
+            padding: 32px 40px;
+            display: flex;
+            flex-direction: column;
+            gap: 28px;
+        }
+
+        .scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .scroll::-webkit-scrollbar-thumb {
+            background: #e2e8f0;
+            border-radius: 10px;
+        }
+
+        /* ─── HERO HEALTH SCORE ─── */
+        .hero {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 32px;
+            background: var(--card);
+            border-radius: 24px;
+            padding: 32px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+        }
+
+        .score-ring-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .score-ring {
+            width: 160px;
+            height: 160px;
+            position: relative;
+        }
+
+        .score-ring svg {
+            transform: rotate(-90deg);
+        }
+
+        .score-ring-track {
+            fill: none;
+            stroke: #f1f5f9;
+            stroke-width: 14;
+        }
+
+        .score-ring-fill {
+            fill: none;
+            stroke-width: 14;
+            stroke-linecap: round;
+            transition: stroke-dashoffset 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .score-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+
+        .score-num {
+            font-size: 38px;
+            font-weight: 900;
+            line-height: 1;
+        }
+
+        .score-denom {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--muted);
+        }
+
+        .score-badge {
+            font-size: 11px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 100px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-green {
+            background: var(--green-light);
+            color: var(--green-dark);
+        }
+
+        .badge-amber {
+            background: var(--amber-light);
+            color: #92400e;
+        }
+
+        .badge-red {
+            background: var(--red-light);
+            color: var(--red-dark);
+        }
+
+        .hero-right {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 16px;
+        }
+
+        .hero-title {
+            font-size: 26px;
+            font-weight: 800;
+            line-height: 1.2;
+        }
+
+        .hero-sub {
+            color: var(--muted);
+            font-size: 14px;
+            font-weight: 500;
+            line-height: 1.7;
+            max-width: 480px;
+        }
+
+        .cond-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .cond-tag {
+            font-size: 11px;
+            font-weight: 800;
+            padding: 4px 12px;
+            border-radius: 100px;
+            background: var(--brand-light);
+            color: var(--brand);
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        /* ─── SECTION HEADER ─── */
+        .section-label {
+            font-size: 12px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--muted);
+            margin-bottom: 4px;
+        }
+
+        /* ─── TWO COLUMN ─── */
+        .two-col {
+            display: grid;
+            grid-template-columns: 1.4fr 1fr;
+            gap: 24px;
+        }
+
+        .card {
+            background: var(--card);
+            border-radius: 24px;
+            padding: 28px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+        }
+
+        .card-hd {
+            font-size: 13px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--muted);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-hd i {
+            font-size: 14px;
+        }
+
+        /* ─── RISK ALERT ITEMS ─── */
+        .risk-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .risk-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+            transition: var(--t);
+        }
+
+        .risk-item:hover {
+            background: #f8fafc;
+        }
+
+        .risk-item:last-child {
+            border-bottom: none;
+        }
+
+        .risk-item.safe {
+            background: var(--green-light);
+            border-left: 4px solid var(--green);
+        }
+
+        .risk-item.moderate {
+            background: #fffbeb;
+            border-left: 4px solid var(--amber);
+        }
+
+        .risk-item.danger {
+            background: var(--red-light);
+            border-left: 4px solid var(--red);
+        }
+
+        .risk-emoji {
+            font-size: 28px;
+            width: 48px;
+            height: 48px;
+            background: #ffffff;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            box-shadow: var(--shadow);
+        }
+
+        .risk-body {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .risk-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 6px;
+        }
+
+        .risk-name {
+            font-size: 16px;
+            font-weight: 800;
+        }
+
+        .risk-score-badge {
+            font-size: 11px;
+            font-weight: 800;
+            padding: 4px 10px;
+            border-radius: 100px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .risk-explanation {
+            font-size: 13px;
+            color: var(--muted);
+            line-height: 1.6;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .risk-reason {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--green-dark);
+            font-weight: 600;
+            font-size: 12px;
+            margin-top: 4px;
+        }
+
+        .risk-warning {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--red-dark);
+            font-weight: 600;
+            font-size: 12px;
+            margin-top: 4px;
+        }
+
+        /* ─── CHART ─── */
+        .chart-wrap {
+            height: 220px;
+            margin-top: 16px;
+        }
+
+        /* ─── FORECAST CARD ─── */
+        .forecast-card {
+            background: linear-gradient(135deg, #0f172a, #1e3a8a);
+            color: #fff;
+            border-radius: 24px;
+            padding: 32px;
+            box-shadow: 0 20px 40px rgba(30, 58, 138, 0.25);
+        }
+
+        .forecast-title {
+            font-size: 13px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            opacity: 0.6;
+            margin-bottom: 8px;
+        }
+
+        .forecast-main {
+            font-size: 42px;
+            font-weight: 900;
+            line-height: 1;
+            margin-bottom: 8px;
+        }
+
+        .forecast-sub {
+            opacity: 0.7;
+            font-size: 13px;
+            font-weight: 500;
+            line-height: 1.6;
+            margin-bottom: 24px;
+        }
+
+        .forecast-metrics {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+
+        .forecast-metric {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 14px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .fm-label {
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            opacity: 0.6;
+            margin-bottom: 6px;
+        }
+
+        .fm-val {
+            font-size: 22px;
+            font-weight: 900;
+        }
+
+        .fm-unit {
+            font-size: 11px;
+            opacity: 0.7;
+        }
+
+        /* ─── ADVICE CARDS ─── */
+        .advice-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 16px;
+        }
+
+        .advice-item {
+            background: var(--card);
+            border-radius: 18px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
+            transition: var(--t);
+        }
+
+        .advice-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
+        }
+
+        .advice-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .advice-icon.blue {
+            background: var(--brand-light);
+            color: var(--brand);
+        }
+
+        .advice-icon.green {
+            background: var(--green-light);
+            color: var(--green);
+        }
+
+        .advice-icon.red {
+            background: var(--red-light);
+            color: var(--red);
+        }
+
+        .advice-icon.purple {
+            background: var(--purple-light);
+            color: var(--purple);
+        }
+
+        .advice-icon.amber {
+            background: var(--amber-light);
+            color: var(--amber);
+        }
+
+        .advice-text {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--muted);
+            line-height: 1.7;
+        }
+
+        /* ─── PATTERN ALERT BANNER ─── */
+        .pattern-banner {
+            padding: 20px 24px;
+            border-radius: 18px;
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
+        }
+
+        .pattern-banner.low {
+            background: var(--green-light);
+            border: 1px solid #a7f3d0;
+        }
+
+        .pattern-banner.moderate {
+            background: var(--amber-light);
+            border: 1px solid #fde68a;
+        }
+
+        .pattern-banner.high {
+            background: var(--red-light);
+            border: 1px solid #fecaca;
+        }
+
+        .pattern-icon {
+            font-size: 28px;
+            flex-shrink: 0;
+        }
+
+        .pattern-title {
+            font-size: 15px;
+            font-weight: 800;
+            margin-bottom: 4px;
+        }
+
+        .pattern-body {
+            font-size: 13px;
+            font-weight: 500;
+            line-height: 1.7;
+        }
+
+        /* ─── LOADING ─── */
+        .loader {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 60px;
+            gap: 12px;
+            color: var(--muted);
+        }
+
+        .loader i {
+            font-size: 40px;
+            color: var(--brand);
+        }
+
+        /* Responsive */
+        @media(max-width:1100px) {
+            .two-col {
+                grid-template-columns: 1fr;
+            }
+
+            .hero {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media(max-width:768px) {
+            aside {
+                display: none;
+            }
+
+            .scroll,
+            .topbar {
+                padding-left: 20px;
+                padding-right: 20px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <aside>
+        <div class="brand">
+            <div class="logo"><i class="fas fa-utensils"></i></div>
+            <span>Health<em>Bite</em></span>
+        </div>
+        <nav>
+            <a href="../user.html" class="nl"><i class="fas fa-home"></i> Dashboard</a>
+            <a href="../full-menu.html" class="nl"><i class="fas fa-th-large"></i> Full Menu</a>
+            <a href="user-analytics.html" class="nl" id="nav-analytics"><i class="fas fa-chart-bar"></i> Analytics</a>
+            <a href="ai-insights.html" class="nl" id="nav-insights"><i class="fas fa-brain"></i> AI Insights</a>
+            <a href="../orders.html" class="nl"><i class="fas fa-clipboard-list"></i> Orders</a>
+            <a href="../cart.html" class="nl"><i class="fas fa-shopping-cart"></i> Cart</a>
+            <a href="../health.html" class="nl"><i class="fas fa-user-circle"></i> Health Profile</a>
+        </nav>
+        <hr class="side-divider">
+        <a href="#" onclick="logout()" class="nl danger"><i class="fas fa-sign-out-alt"></i> Logout</a>
+    </aside>
+
+    <main>
+        <div class="topbar">
+            <h2>AI Risk Intelligence</h2>
+            <div class="topbar-right">
+                <div class="date-chip"><i class="far fa-calendar"></i><span id="hdr-date"></span></div>
+                <div class="user-avatar" id="hdr-avatar">U</div>
+            </div>
+        </div>
+
+        <div class="scroll" id="page">
+            <div class="loader" id="loading-state">
+                <i class="fas fa-brain fa-pulse"></i>
+                <span style="font-weight:700;">Analysing your health data...</span>
+            </div>
+        </div>
+    </main>
+
+    <script src="../script.js"></script>
+    <script>
+        const API = window.API_ROOT
+            ? window.API_ROOT.replace(/\/api$/, '')   // strip trailing /api to get origin
+            : window.location.origin;
+        let scoreChart = null;
+
+        // logout() provided by script.js
+
+        // ── Init ──────────────────────────────────────────────────────────────
+        document.addEventListener('DOMContentLoaded', async () => {
+            const token = localStorage.getItem('token');
+            if (!token) { window.location.href = '/index.html'; return; }
+
+            const now = new Date();
+            document.getElementById('hdr-date').textContent =
+                now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+            const name = localStorage.getItem('hb_user_name') || 'U';
+            document.getElementById('hdr-avatar').textContent = name.charAt(0).toUpperCase();
+
+            try {
+                const [riskRes, aiRes] = await Promise.all([
+                    fetch(`${API}/api/analytics/risk-prediction`, { headers: { Authorization: `Bearer ${token}` } }),
+                    fetch(`${API}/api/analytics/ai/predictions?timeframe=Weekly`, { headers: { Authorization: `Bearer ${token}` } }),
+                ]);
+
+                const risk = riskRes.ok ? await riskRes.json() : null;
+                const ai = aiRes.ok ? await aiRes.json() : null;
+                renderPage(risk, ai);
+            } catch (e) {
+                console.error('AI Insights fetch error:', e);
+                document.getElementById('loading-state').innerHTML =
+                    '<i class="fas fa-exclamation-triangle" style="color:#ef4444"></i><span>Unable to load AI insights. Ensure the backend is running.</span>';
+            }
+        });
+
+        // ── Full page render ──────────────────────────────────────────────────
+        function renderPage(risk, ai) {
+            const page = document.getElementById('page');
+            const hs = risk?.health_score ?? ai?.score ?? 78;
+            const conds = risk?.conditions ?? [];
+            const risky = risk?.risky_foods ?? [];
+            const advice = risk?.advice ?? [];
+            const pattern = risk?.pattern ?? {};
+            const avgDaily = risk?.avg_daily ?? {};
+
+            // Colour theme for score
+            const scoreColor = hs >= 75 ? '#10b981' : (hs >= 50 ? '#f59e0b' : '#ef4444');
+            const scoreClass = hs >= 75 ? 'badge-green' : (hs >= 50 ? 'badge-amber' : 'badge-red');
+            const scoreLabel = hs >= 75 ? 'Good' : (hs >= 50 ? 'At Risk' : 'High Risk');
+
+            // Circumference for SVG ring
+            const r = 64;            // radius (viewBox 160, cx=cy=80, stroke-width=14)
+            const circ = 2 * Math.PI * r;  // ≈ 402
+            const dashoffset = circ - (hs / 100) * circ;
+
+            // Insight from AI endpoint or risk engine
+            let insightText = ai?.insight ?? (advice.length > 0 ? advice[0] : 'Analysing your dietary history...');
+            
+            // Sync the insight text's score with the actual ring score to avoid mismatch!
+            if (ai && risk && typeof risk.health_score !== 'undefined') {
+                insightText = insightText.replace(new RegExp(`${ai.score}/100`, 'g'), `${risk.health_score}/100`);
+            }
+
+            page.innerHTML = `
+            <!-- HERO HEALTH SCORE -->
+            <div class="hero">
+                <div class="score-ring-wrap">
+                    <div class="score-ring">
+                        <svg viewBox="0 0 160 160" width="160" height="160">
+                            <circle class="score-ring-track" cx="80" cy="80" r="${r}"/>
+                            <circle class="score-ring-fill" cx="80" cy="80" r="${r}"
+                                stroke="${scoreColor}"
+                                stroke-dasharray="${circ}"
+                                stroke-dashoffset="${circ}"
+                                id="ring-fill"/>
+                        </svg>
+                        <div class="score-center">
+                            <div class="score-num" style="color:${scoreColor}">${hs}</div>
+                            <div class="score-denom">/100</div>
+                        </div>
+                    </div>
+                    <span class="score-badge ${scoreClass}">${scoreLabel}</span>
+                </div>
+                <div class="hero-right">
+                    <div class="hero-title">Your AI Health Intelligence Report</div>
+                    <div class="hero-sub">${insightText}</div>
+                    ${conds.length > 0 ? `<div class="cond-tags">${conds.map(c => `<span class="cond-tag">${c}</span>`).join('')}</div>` : ''}
+                </div>
+            </div>
+
+            <!-- PATTERN ALERT -->
+            ${renderPatternBanner(pattern)}
+
+            <!-- RISK ALERTS + WELLNESS CHART -->
+            <div class="two-col">
+                <div class="card">
+                    <div class="card-hd"><i class="fas fa-exclamation-triangle" style="color:#ef4444"></i> Risk Alerts — Last 7 Days</div>
+                    <div class="risk-list" id="risk-list">
+                        ${risky.length === 0
+                    ? '<div style="color:#10b981;font-size:13px;font-weight:700;padding:8px;border-radius:12px;background:#f0fdf4;border:1px solid #d1fae5;">✅ No risky food items detected in the past 7 days. Excellent choices!</div>'
+                    : risky.slice(0, 6).map(f => renderRiskItem(f)).join('')
+                }
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-hd"><i class="fas fa-chart-line" style="color:#2563eb"></i> Wellness Trend</div>
+                    <div class="chart-wrap"><canvas id="wellnessChart"></canvas></div>
+                </div>
+            </div>
+
+            <!-- FORECAST CARD -->
+            <div class="forecast-card">
+                <div class="forecast-title">30-Day Risk Projection</div>
+                <div class="forecast-main">${pattern.risk_increase_estimate_pct > 0 ? '+' + pattern.risk_increase_estimate_pct + '%' : 'Stable'}</div>
+                <div class="forecast-sub">${pattern.projection ?? 'Based on your current dietary patterns, your health risk remains stable. Continue making smart food choices to maintain or improve your score.'}</div>
+                <div class="forecast-metrics">
+                    <div class="forecast-metric">
+                        <div class="fm-label">Avg Sugar</div>
+                        <div class="fm-val">${Math.round(avgDaily.sugar ?? 0)}<span class="fm-unit">g/day</span></div>
+                    </div>
+                    <div class="forecast-metric">
+                        <div class="fm-label">Avg Sodium</div>
+                        <div class="fm-val">${Math.round(avgDaily.sodium ?? 0)}<span class="fm-unit">mg/day</span></div>
+                    </div>
+                    <div class="forecast-metric">
+                        <div class="fm-label">Avg Calories</div>
+                        <div class="fm-val">${Math.round(avgDaily.calories ?? 0)}<span class="fm-unit">kcal/day</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI DIETARY ADVICE -->
+            <div>
+                <div class="section-label" style="margin-bottom:16px;"><i class="fas fa-lightbulb" style="color:#f59e0b;margin-right:6px;"></i>AI Dietary Guidance</div>
+                <div class="advice-grid">
+                    ${renderAdviceCards(advice, conds)}
+                </div>
+            </div>
+            `;
+
+            // Animate ring after render
+            setTimeout(() => {
+                const fill = document.getElementById('ring-fill');
+                if (fill) fill.setAttribute('stroke-dashoffset', dashoffset);
+            }, 100);
+
+            // Wellness trend chart
+            renderWellnessChart(ai);
+        }
+
+        function renderPatternBanner(pattern) {
+            if (!pattern || pattern.severity === 'low' || !pattern.alert) return '';
+            const icons = { moderate: '⚠️', high: '🚨' };
+            const icon = icons[pattern.severity] || '⚠️';
+            return `
+            <div class="pattern-banner ${pattern.severity}">
+                <span class="pattern-icon">${icon}</span>
+                <div>
+                    <div class="pattern-title">${pattern.alert}</div>
+                    <div class="pattern-body">${pattern.projection ?? ''}</div>
+                </div>
+            </div>`;
+        }
+
+        function renderRiskItem(food) {
+            const level = (food.risk_level || 'SAFE').toLowerCase();
+            const cls = level === 'danger' ? 'danger' : (level === 'moderate' ? 'moderate' : 'safe');
+            const scoreClass = level === 'danger' ? 'bg-red-100 text-red-600' : (level === 'moderate' ? 'bg-orange-100 text-orange-600' : 'bg-green-100 text-green-600');
+            const scoreColor = level === 'danger' ? '#ef4444' : (level === 'moderate' ? '#f59e0b' : '#10b981');
+            const scoreBg = level === 'danger' ? '#fef2f2' : (level === 'moderate' ? '#fffbeb' : '#ecfdf5');
+
+            const reasonsHTML = (food.reasons || []).map(r => `<div class="risk-reason"><i class="fas fa-check-circle"></i> ${r.replace('✓', '')}</div>`).join('');
+            const warningsHTML = (food.warnings || []).map(w => `<div class="risk-warning"><i class="fas fa-exclamation-triangle"></i> ${w.replace('⚠', '')}</div>`).join('');
+
+            return `
+            <div class="risk-item ${cls}">
+                <span class="risk-emoji">${food.image || '🍽️'}</span>
+                <div class="risk-body">
+                    <div class="risk-header">
+                        <div class="risk-name">${food.name}</div>
+                        <div class="risk-score-badge" style="background:${scoreBg};color:${scoreColor}">
+                            <i class="fas fa-heartbeat"></i> ${food.risk_score}/100
+                        </div>
+                    </div>
+                    <div class="risk-explanation">
+                        <div style="margin-bottom: 8px;">${food.explanation.split('\\n')[0]}</div>
+                        ${reasonsHTML}
+                        ${warningsHTML}
+                    </div>
+                </div>
+            </div>`;
+        }
+
+        function renderAdviceCards(advice, conds) {
+            const icons = [
+                { cls: 'blue', icon: 'fa-brain' },
+                { cls: 'red', icon: 'fa-exclamation-triangle' },
+                { cls: 'green', icon: 'fa-leaf' },
+                { cls: 'purple', icon: 'fa-chart-line' },
+                { cls: 'amber', icon: 'fa-utensils' },
+            ];
+
+            // Always show at least one helpful fallback
+            const safeAdvice = advice.length > 0 ? advice : [
+                'Ensure balanced nutrition: 50% complex carbohydrates, 25% lean protein, 25% healthy fats.',
+                'Drink at least 2.5–3L of water daily to support metabolism and kidney health.',
+                'Prefer grilled, steamed, or boiled preparations over fried foods.',
+            ];
+
+            return safeAdvice.map((text, i) => {
+                const { cls, icon } = icons[i % icons.length];
+                return `
+                <div class="advice-item">
+                    <div class="advice-icon ${cls}"><i class="fas ${icon}"></i></div>
+                    <div class="advice-text">${text}</div>
+                </div>`;
+            }).join('');
+        }
+
+        function renderWellnessChart(ai) {
+            const ctx = document.getElementById('wellnessChart');
+            if (!ctx) return;
+            const c = ctx.getContext('2d');
+            if (scoreChart) scoreChart.destroy();
+
+            const chartData = ai?.chart ?? {
+                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                data: [72, 68, 75, 78, 74, 80, 77]
+            };
+
+            const grad = c.createLinearGradient(0, 0, 0, 220);
+            grad.addColorStop(0, 'rgba(37,99,235,0.25)');
+            grad.addColorStop(1, 'rgba(37,99,235,0)');
+
+            scoreChart = new Chart(c, {
+                type: 'line',
+                data: {
+                    labels: chartData.labels,
+                    datasets: [{
+                        label: 'Wellness Score',
+                        data: chartData.data,
+                        borderColor: '#2563eb', borderWidth: 3,
+                        backgroundColor: grad, fill: true,
+                        pointBackgroundColor: '#fff', pointBorderColor: '#2563eb', pointBorderWidth: 2, pointRadius: 5,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    scales: {
+                        x: { grid: { display: false }, ticks: { font: { weight: '700', size: 10 }, color: '#94a3b8' }, border: { display: false } },
+                        y: { display: false, min: 0, max: 100 }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { backgroundColor: '#1e293b', titleFont: { family: 'Outfit', size: 11 }, bodyFont: { family: 'Outfit', size: 13, weight: 'bold' }, cornerRadius: 10, displayColors: false }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+
+</html>
