@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -883,11 +883,7 @@
                     </div>
                 </div>
 
-                <div class="glucose-metric">
-                    <span
-                        style="color: #64748b; font-size: 11px; font-weight: 800; text-transform: uppercase;">Glucose</span>
-                    <span id="sidebar-glucose" style="color: #3b82f6;">--</span>
-                </div>
+
             </div>
         </div>
     </aside>
@@ -1040,21 +1036,21 @@
             fetch(`${API_BASE}/health/profile`, { headers })
                 .then(res => res.ok ? res.json() : Promise.reject("No profile"))
                 .then(profile => {
-                    const cond = profile.disease && profile.disease.length > 0 ? profile.disease[0] : "General Health";
+                    const cond = profile.disease && profile.disease.length > 0 ? profile.disease.join(', ') : "General Health";
                     document.getElementById('sidebar-condition').textContent = cond;
                     document.getElementById('user-condition-pill').textContent = cond;
                     document.getElementById('personalized-subtitle').innerHTML = `AI-curated selections based on your <strong>${cond}</strong> (Safety Score > 80)`;
 
-                    document.getElementById('sidebar-glucose').textContent = profile.bmi > 25 ? "6.8%" : "5.4%";
+
 
                     // Fetch the REAL unified health score from AI Analytics instead of faking it!
                     fetch(`${API_BASE}/analytics/risk-prediction`, { headers })
                         .then(r => r.ok ? r.json() : null)
                         .then(risk => {
-                            let score = risk ? risk.health_score : 85; 
+                            let score = risk ? risk.health_score : 85;
                             document.getElementById('health-score-val').textContent = score;
                             document.getElementById('health-bar').style.width = score + "%";
-                            
+
                             // Color code the bar based on the true score
                             const color = score >= 75 ? '#10b981' : (score >= 50 ? '#f59e0b' : '#ef4444');
                             document.getElementById('health-bar').style.background = color;
