@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -1695,7 +1695,6 @@
                             <div style="display: flex; align-items: center; gap: 10px; font-weight: 700;">
                                 <span>${allergyIcons[a] || '🚫'}</span> ${a.charAt(0).toUpperCase() + a.slice(1)}
                             </div>
-                            <span class="severity-label severity-${sev.toLowerCase()}">${sev}</span>
                         </div>
                     `;
                 });
@@ -1783,7 +1782,6 @@
                 algList.innerHTML = (data.allergies && data.allergies.length > 0) ? data.allergies.map(a => `
                     <div class="safety-item">
                         <span>${a.name}</span>
-                        <span class="severity-label severity-fatal">${a.severity}</span>
                     </div>
                 `).join('') : '<p style="color: grey">No active allergies</p>';
 
